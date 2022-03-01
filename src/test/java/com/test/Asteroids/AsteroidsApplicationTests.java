@@ -58,8 +58,8 @@ class AsteroidsApplicationTests {
 		
 		Dates dates = DatesCalculator.getDatesToCalculateAsteroids(dummyCal.getTime());
 		
-		assertThat(dates.getFormattedDateFrom().equals("01/01/2000"));
-		assertThat(dates.getFormattedDateTo().equals("03/01/2000"));
+		assertThat(dates.getFormattedDateFrom().equals("2000-01-01"));
+		assertThat(dates.getFormattedDateTo().equals("2000-01-03"));
 		
 	}
 

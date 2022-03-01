@@ -22,7 +22,7 @@ public class Dates {
 	}
 	
 	private String getFormattedDate(Date date) {
-		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 		return sdf.format(date); 
 	}
 
