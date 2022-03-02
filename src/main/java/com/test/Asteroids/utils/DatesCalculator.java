@@ -7,14 +7,12 @@ import com.test.Asteroids.model.Dates;
 
 public class DatesCalculator {
 
-	private static final int DEFAULT_DATES_FOR_CALCULATE = 3;
-	
-	public static Dates getDatesToCalculateAsteroids(Date dateFrom) {
+	public static Dates getDatesToCalculateAsteroids(Date dateFrom, int days) {
 		
 		Calendar datesCal = Calendar.getInstance();
 		datesCal.setTime(dateFrom);
 		
-		datesCal.add(Calendar.DATE, DEFAULT_DATES_FOR_CALCULATE);
+		datesCal.add(Calendar.DATE, days);
 		Date dateTo = datesCal.getTime();
 		
 		return new Dates(dateFrom, dateTo);

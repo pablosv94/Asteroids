@@ -1,67 +1,61 @@
 package com.test.Asteroids.controller;
 
-import java.lang.reflect.Type;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.List;
 
-import org.springframework.util.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
+import org.springframework.web.client.HttpClientErrorException;
 import com.test.Asteroids.exceptions.DaysNotFoundException;
+import com.test.Asteroids.exceptions.ExcededRangeException;
+import com.test.Asteroids.model.NasaResult;
+import com.test.Asteroids.repository.NasaRepository;
 import com.test.Asteroids.model.Asteroid;
-import com.test.Asteroids.model.AsteroidFullDataDeserializer;
-import com.test.Asteroids.model.AsteroidFullData;
 import com.test.Asteroids.model.Dates;
 import com.test.Asteroids.utils.DatesCalculator;
+import com.test.Asteroids.utils.SortUtil;
 
 @RestController
 public class AsteroidsController {
 
-	private static String NASA_URL = "https://api.nasa.gov/neo/rest/v1/feed?start_date=$startDate&end_date=$endDate&api_key=DEMO_KEY";
+	@Autowired
+	NasaRepository nasaRepository;
 	
 	@RequestMapping("/asteroids")
-	public String getTopThreeRiskAsteroidsUntilDays(@RequestParam(value="days", required = false) Integer days) throws DaysNotFoundException  {
+	public List<Asteroid> getTopThreeBigAsteroidsWithImpactRiskOnEarth(@RequestParam(value="days", required = false) Integer days) throws DaysNotFoundException  {
 		
 		if(days == null) {
 			throw new DaysNotFoundException();
 		}
 		
-		Dates dates = DatesCalculator.getDatesToCalculateAsteroids(Calendar.getInstance().getTime());
+		Dates dates = DatesCalculator.getDatesToCalculateAsteroids(Calendar.getInstance().getTime(), days);
 		
-		NASA_URL = StringUtils.replace(NASA_URL, "$startDate", dates.getFormattedDateFrom());
-		NASA_URL = StringUtils.replace(NASA_URL, "$endDate", dates.getFormattedDateTo());
-		
-		//https://api.nasa.gov/neo/rest/v1/feed?start_date=2021-12-09&end_date=2021-12-12&api_key=DEMO_KEY
-		RestTemplate restTemplate = new RestTemplate();
-		String result = restTemplate.getForObject(NASA_URL, String.class);
-		
-		if(result != null) {
-			List<Asteroid> asteroids = getAsteroidsFromJSON(result);
+		try {
+			
+			NasaResult nasaResult = nasaRepository.getNasaData(dates);
+			
+			if(nasaResult != null) {
+				return getSortedAsteroids(nasaResult);
+			}
+			
+		}catch(HttpClientErrorException e) {
+			throw new ExcededRangeException();
 		}
 		
-		return "";
-		
+		return null;
 	}
 	
-	private List<Asteroid> getAsteroidsFromJSON(String json){
-		
-		GsonBuilder gsonBuilder = new GsonBuilder();
-		AsteroidFullDataDeserializer deserializer = new AsteroidFullDataDeserializer();
-		
-		gsonBuilder.registerTypeAdapter(AsteroidFullData.class, deserializer);
-		
-		Gson customGson = gsonBuilder.create();  
-		Type listType = new TypeToken<AsteroidFullData>(){}.getType();
-		
-		return customGson.fromJson(json, listType);
-		
+	/**
+	 *  Exponer un endpoint que reciba un número de días entre 1 y 7 y que devuelva un listado en
+	 *	formato json con el top 3 de asteroides más grandes con potencial riesgo de impacto en el
+	 *	planeta Tierra entre el día de hoy y la fecha obtenida de sumar a la fecha de hoy el número de
+	 *	días introducido como parámetro.
+	 * 
+	 */
+	private List<Asteroid> getSortedAsteroids(NasaResult nasaResult){
+		return SortUtil.getTopThreeAsteroidsSortedBySizeRiskOnEarth(nasaResult.getAsteroids());
 	}
-
+	
 }
